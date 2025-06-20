@@ -11,3 +11,4 @@
 #logs
 /logs
 __pycache__/
+local_data/

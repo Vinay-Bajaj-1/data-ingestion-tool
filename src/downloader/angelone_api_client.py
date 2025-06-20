@@ -15,7 +15,7 @@ class AngelOneApiClient:
     It handles authentication, historical data fetching, and scrip master data retrieval.
     """
 
-    def __init__(self, api_key, username, pin, totp_secret, scrip_url):
+    def __init__(self, api_key, username, pin, token, scrip_url):
         """
         Initializes the AngelOneApiClient and establishes a session with SmartAPI.
 
@@ -23,19 +23,19 @@ class AngelOneApiClient:
             api_key (str): Your Angel One SmartAPI Key.
             username (str): Your Angel One Client ID.
             pin (str): Your Angel One 4-digit MPIN.
-            totp_secret (str): The base32-encoded secret key obtained from SmartAPI portal
+            secret_key (str): The base32-encoded secret key obtained from SmartAPI portal
                                 for generating TOTPs.
             scrip_url (str): The URL to fetch the latest scrip master data from Angel One.
         """
         self.api_key = api_key
-        self.totp_secret = totp_secret
+        self.token = token
         self.username = username
         self.pin = pin
         self.scrip_url = scrip_url 
 
         try:
             # Generate the current Time-Based One-Time Password (TOTP)
-            self._totp = pyotp.TOTP(self.totp_secret).now()
+            self._totp = pyotp.TOTP(self.token).now()
             logger.info(f"TOTP generated successfully for user {self.username}.")
         except Exception as e:
             logger.error(f"Error generating TOTP: {e}. Please check your TOTP secret key.")
