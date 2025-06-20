@@ -12,7 +12,7 @@ class PreprocessData:
         pass
     
     @staticmethod
-    def preprocess_data(data):
+    def preprocess_data(data,ticker):
         """
         Converts raw data into a DataFrame, renames columns, converts datetime, and sorts.
 
@@ -23,10 +23,11 @@ class PreprocessData:
             pd.DataFrame: The preprocessed DataFrame.
         """
         df = pd.DataFrame(data)
-        df.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume']
-        df['datetime'] = pd.to_datetime(df['datetime'])
-        
-        df.sort_values(by = 'datetime', inplace = True)
+        df.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize(None)
+        df['ticker'] = ticker
+        final_columns = ['ticker', 'timestamp', 'open', 'high', 'low', 'close', 'volume']
+
         
         logger.info("Data preprocessed successfully.")
-        return df
+        return df[final_columns]

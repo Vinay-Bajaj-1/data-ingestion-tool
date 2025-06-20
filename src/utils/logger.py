@@ -49,14 +49,15 @@ class AppLogger:
             file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
             file_handler.setLevel(level)
             # Use '%(name)s' in the formatter to show the logger's name in the log file
-            file_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s - %(message)s')
+            file_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s:%(lineno)d - %(message)s')
+
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
 
             # Console handler (optional, but good for real-time feedback)
             console_handler = logging.StreamHandler()
             console_handler.setLevel(level)
-            console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s - %(message)s')
+            console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s:%(lineno)d - %(message)s')
             console_handler.setFormatter(console_formatter)
             logger.addHandler(console_handler)
 
