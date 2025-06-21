@@ -14,11 +14,10 @@ class SingleTickerIngestor:
         self.table_name = table_name
 
     def ingest(self, angelone_client, ticker_token, ticker):
-        
-        print(f"Ingesting data for {ticker}")
 
         # Get the latest timestamp of existing data from the ClickHouse database
-        last_date = self.clickhouse_client.get_last_date_data(ticker)
+        last_date = self.clickhouse_client.get_last_date_data(ticker.lower())
+
         # If no data exists or the last date is extremely old, start fetching from a predefined past date
         if last_date is None or last_date.year < 1980:
             last_date = datetime(2016, 1, 1)
@@ -31,13 +30,14 @@ class SingleTickerIngestor:
 
         # Loop to fetch historical data in chunks until a certain condition is met
         while empty_chunk_count < 3:
+            #print(all_dataframes)
             # Determine the 'from_date' for the current chunk:
             # It's either one day after the last known data point, or 29 days before 'to_date',
             # whichever is later, to fetch data in approximately 30-day chunks.
             from_date = max(last_date.date() + timedelta(days=1), to_date - timedelta(days=29))
 
             if from_date > to_date:
-                print(f"Complete data fetched for {ticker} till {to_date}. Ending loop.")
+                print(f"Complete data fetched for {ticker} till {to_date}.")
                 break
 
             print(f"Fetching from {from_date} to {to_date} for {ticker}")
@@ -71,6 +71,7 @@ class SingleTickerIngestor:
             combined_df = pd.concat(all_dataframes)
             combined_df = combined_df.sort_values(by='timestamp')
             self.clickhouse_client.push_data_to_database(self.table_name, combined_df, ticker)
+            print(f'Data fetched cleaned and pushed for {ticker} in database')
             logger.info(f'Data fetched cleaned and pushed for {ticker} in database')
             
         else:

@@ -43,7 +43,7 @@ class ReadLocalData:
                 file_path = os.path.join(directory_path, filename)
                 try:
                     df = pd.read_csv(file_path)
-                    key = os.path.splitext(filename)[0]
+                    key = os.path.splitext(filename)[0].lower()
                     chunk_data[key] = df
                     logger.info(f"Loaded '{key}' ({df.shape[0]} rows, {df.shape[1]} columns) into current chunk.")
                 except Exception as e:
