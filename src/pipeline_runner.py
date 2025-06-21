@@ -4,9 +4,7 @@ from src.downloader.angelone_api_client import AngelOneApiClient
 from src.preprocess.preprocess import PreprocessData
 from src.ingestion.clickhouse import ClickhouseConnect
 from src.ingestion.ingest_single import SingleTickerIngestor
-from src.utils.logger import AppLogger
 
-logger = AppLogger.get_logger(__name__)
 
 class PipelineRunner:
     def __init__(self, config):
@@ -39,7 +37,7 @@ class PipelineRunner:
         # Initialize Angel One API client
         self.api_client = AngelOneApiClient(
             api_key=self.config.ANGELONE_API,
-            user_id=self.config.ANGEL_ONE_USER_ID,
+            username=self.config.ANGEL_ONE_USER_ID,
             mpin=self.config.ANGEL_ONE_PIN,
             access_token=self.config.ANGEL_ONE_TOKEN,
             url=self.config.ANGEL_ONE_API_SCRIP_LINK

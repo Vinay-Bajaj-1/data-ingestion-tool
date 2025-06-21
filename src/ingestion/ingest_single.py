@@ -4,7 +4,7 @@ import time
 from src.utils.logger import AppLogger
 
 
-logger = AppLogger.get_logger(__name__)
+logger = AppLogger.get_logger()
 
 
 class SingleTickerIngestor:
