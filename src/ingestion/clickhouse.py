@@ -1,9 +1,8 @@
 from clickhouse_connect import get_client
 from datetime import datetime
-import logging
+from src.utils.logger import AppLogger
 
-
-logger = logging.getLogger(__name__)
+logger = AppLogger.get_logger(__name__)
 
 class ClickhouseConnect:
 
@@ -151,7 +150,7 @@ class ClickhouseConnect:
             if self.validate_table(table_name, dataframe):
                 self.client.insert_df('stock_ohlcv', dataframe)
                 #print(f'Data Inserted to {table_name} for {ticker}')
-                logger.info("Data successfully inserted into ClickHouse.")
+                
             else:
                 logger.error("Data not inserted into ClickHouse. Kindly check dataframe columns and table columns")
 

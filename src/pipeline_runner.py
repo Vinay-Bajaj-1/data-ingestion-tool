@@ -1,6 +1,4 @@
-import os
-from dotenv import load_dotenv
-import pandas as pd
+from config.settings import Config
 from src.downloader.fetch_local_data import ReadLocalData
 from src.downloader.angelone_api_client import AngelOneApiClient
 from src.preprocess.preprocess import PreprocessData
@@ -11,61 +9,62 @@ from src.utils.logger import AppLogger
 logger = AppLogger.get_logger(__name__)
 
 class PipelineRunner:
-    def __init__(self):
-        load_dotenv()
+    def __init__(self, config):
+        # Load configuration
+        self.config = config()
 
-        self.table_name = os.getenv("CLICKHOUSE_TABLE")
-        self.mode = os.getenv("DATA_SOURCE_MODE", "api").lower()
-
+        # Initialize ClickHouse client
         self.clickhouse_client = ClickhouseConnect(
-            host=os.getenv("CLICKHOUSE_HOST"),
-            username=os.getenv("CLICKHOUSE_USERNAME"),
-            password=os.getenv("CLICKHOUSE_PASSWORD"),
-            database=os.getenv("CLICKHOUSE_DATABASE"),
-            table_name=self.table_name
+            host=self.config.CLICKHOUSE_HOST,
+            username=self.config.CLICKHOUSE_USERNAME,
+            password=self.config.CLICKHOUSE_PASSWORD,
+            database=self.config.CLICKHOUSE_DATABASE,
+            table_name=self.config.CLICKHOUSE_TABLE
         )
+
+        # Create ingestor for single ticker ingestion
         self.single_ingestor = SingleTickerIngestor(
-            self.clickhouse_client, PreprocessData, self.table_name
+            self.clickhouse_client, PreprocessData, self.config.CLICKHOUSE_TABLE
         )
 
-        self.local_data_dir = os.getenv('LOCAL_DATA_FOLDER')
-
-        if self.mode == "api":
+        # Determine data source mode
+        if self.config.DATA_SOURCE_MODE == "api":
             self._setup_api_client()
-        elif self.mode == 'local':
-            pass
+        elif self.config.DATA_SOURCE_MODE == "local":
+            self.local_data_dir = self.config.LOCAL_DATA_FOLDER
         else:
-            raise ValueError(f"Invalid DATA_SOURCE_MODE: {self.mode}")
+            raise ValueError(f"Invalid DATA_SOURCE_MODE: {self.config.DATA_SOURCE_MODE}")
 
     def _setup_api_client(self):
+        # Initialize Angel One API client
         self.api_client = AngelOneApiClient(
-            api_key=os.getenv("ANGELONE_API"),
-            user_id=os.getenv("ANGEL_ONE_USER_ID"),
-            mpin=os.getenv("ANGEL_ONE_PIN"),
-            access_token=os.getenv("ANGEL_ONE_TOKEN"),
-            url=os.getenv("ANGEL_ONE_API_SCRIP_LINK")
+            api_key=self.config.ANGELONE_API,
+            user_id=self.config.ANGEL_ONE_USER_ID,
+            mpin=self.config.ANGEL_ONE_PIN,
+            access_token=self.config.ANGEL_ONE_TOKEN,
+            url=self.config.ANGEL_ONE_API_SCRIP_LINK
         )
 
     def run(self):
-        if self.mode == "api":
+        # Execute pipeline based on data source
+        if self.config.DATA_SOURCE_MODE == "api":
             self._run_api_mode()
-        elif self.mode == "local":
-            print('Calling Local')
+        elif self.config.DATA_SOURCE_MODE == "local":
             self._run_local_mode()
 
     def _run_api_mode(self):
+        # Ingest data from Angel One API
         print("Running API ingestion...")
         scrip_df = self.api_client.get_latest_scrip()
-        
 
         for _, row in scrip_df.iterrows():
             ticker_token = row['token']
             ticker = row['symbol'].replace("-EQ", "")
             self.single_ingestor.ingest(self.api_client, ticker_token, ticker)
-            
 
     def _run_local_mode(self):
-        for data in ReadLocalData.read_local_data_in_chunks('local_data'):
+        # Ingest data from local CSV files
+        for data in ReadLocalData.read_local_data_in_chunks(self.local_data_dir):
             for ticker, df in data.items():
                 processed_data = PreprocessData.preprocess_data(df, ticker)
                 print(f'Processing {ticker}, shape : {df.shape}')
