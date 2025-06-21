@@ -33,6 +33,7 @@ class ReadLocalData:
 
         # Read CSV files in the directory
         data = {}
+        print(f'Reading all files from {directory_path}')
         for filename in os.listdir(directory_path):
             if filename.endswith(".csv"):
                 file_path = os.path.join(directory_path, filename)

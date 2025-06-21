@@ -66,6 +66,7 @@ class ClickhouseConnect:
                 print(f"Table '{table_name}' created successfully.")
         
         except Exception as e:
+            logger.error('Table not created in database')
             print(f"Error creating table '{table_name}': {e}")
 
 
@@ -91,6 +92,7 @@ class ClickhouseConnect:
 
         # Handle default epoch case
         if latest_ts is not None and latest_ts == datetime(1970, 1, 1):
+            logger.info(f'Empty table for {ticker}')
             return None
 
         return latest_ts
@@ -127,13 +129,14 @@ class ClickhouseConnect:
             if table_columns == df_columns:
                 return True
             else:
+                logger.error(f"Column mismatch:\nDB: {table_columns}\nDF: {df_columns}")
                 print(f"Column mismatch:\nDB: {table_columns}\nDF: {df_columns}")
                 return False
 
         except Exception as e:
+            logger.error(f"Validation error: {e}")
             print(f"Validation error: {e}")
             return False
-
 
 
     def push_data_to_database(self, table_name,dataframe):

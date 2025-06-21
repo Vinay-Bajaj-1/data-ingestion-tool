@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+
 
 class AppLogger:
     """
@@ -10,7 +10,7 @@ class AppLogger:
     """
 
     @staticmethod
-    def get_logger(name, log_dir = 'logs', level=logging.INFO):
+    def get_logger(name, log_dir = 'logs', level=logging.ERROR):
         """
         Retrieves or creates a named logger instance, configuring it to write
         to a specific log file in the 'logs' directory.
