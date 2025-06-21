@@ -45,6 +45,7 @@ class PipelineRunner:
         if self.mode == "api":
             self._run_api_mode()
         elif self.mode == "local":
+            print('Calling Local')
             self._run_local_mode()
 
     def _run_api_mode(self):
