@@ -28,6 +28,6 @@ class PreprocessData:
         df['ticker'] = ticker
         final_columns = ['ticker', 'timestamp', 'open', 'high', 'low', 'close', 'volume']
 
-        
-        logger.info("Data preprocessed successfully.")
+        df = df.ffill()
+        df.dropna(inplace=True)
         return df[final_columns]
