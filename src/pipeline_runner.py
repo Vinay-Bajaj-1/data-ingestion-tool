@@ -57,7 +57,7 @@ class PipelineRunner:
 
         for _, row in scrip_df.iterrows():
             ticker_token = row['token']
-            ticker = row['symbol'].replace("-EQ", "")
+            ticker = row['symbol'].replace("-EQ", "").lower()
             self.single_ingestor.ingest(self.api_client, ticker_token, ticker)
 
     def _run_local_mode(self):
