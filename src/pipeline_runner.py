@@ -6,12 +6,15 @@ from src.downloader.angelone_api_client import AngelOneApiClient
 from src.preprocess.preprocess import PreprocessData
 from src.ingestion.clickhouse import ClickhouseConnect
 from src.ingestion.ingest_single import SingleTickerIngestor
+from src.utils.logger import AppLogger
+
+logger = AppLogger.get_logger(__name__)
 
 class PipelineRunner:
     def __init__(self):
         load_dotenv()
 
-        self.table_name = os.getenv("CLICKHOuse_TABLE")
+        self.table_name = os.getenv("CLICKHOUSE_TABLE")
         self.mode = os.getenv("DATA_SOURCE_MODE", "api").lower()
 
         self.clickhouse_client = ClickhouseConnect(
@@ -21,11 +24,16 @@ class PipelineRunner:
             database=os.getenv("CLICKHOUSE_DATABASE"),
             table_name=self.table_name
         )
+        self.single_ingestor = SingleTickerIngestor(
+            self.clickhouse_client, PreprocessData, self.table_name
+        )
+
+        self.local_data_dir = os.getenv('LOCAL_DATA_FOLDER')
 
         if self.mode == "api":
             self._setup_api_client()
-        elif self.mode == "local":
-            self._setup_local_data()
+        elif self.mode == 'local':
+            pass
         else:
             raise ValueError(f"Invalid DATA_SOURCE_MODE: {self.mode}")
 
@@ -38,9 +46,6 @@ class PipelineRunner:
             url=os.getenv("ANGEL_ONE_API_SCRIP_LINK")
         )
 
-    def _setup_local_data(self):
-        self.local_data = ReadLocalData.read_local_data('local_data')
-
     def run(self):
         if self.mode == "api":
             self._run_api_mode()
@@ -51,26 +56,18 @@ class PipelineRunner:
     def _run_api_mode(self):
         print("Running API ingestion...")
         scrip_df = self.api_client.get_latest_scrip()
-        single_ingestor = SingleTickerIngestor(
-            self.api_client, self.clickhouse_client, PreprocessData, self.table_name
-        )
+        
 
         for _, row in scrip_df.iterrows():
             ticker_token = row['token']
             ticker = row['symbol'].replace("-EQ", "")
-            single_ingestor.ingest(ticker_token, ticker)
+            self.single_ingestor.ingest(self.api_client, ticker_token, ticker)
             
 
     def _run_local_mode(self):
-        print("Restoring from local CSV backup...")
-        for ticker, df in self.local_data.items():
-            processed = PreprocessData.preprocess_data(df, ticker)
-            processed.sort_values(by='timestamp', inplace=True)
-            processed['partition'] = processed['timestamp'].dt.to_period('M')
-
-            for _, chunk in processed.groupby('partition'):
-                chunk.drop(columns='partition', inplace=True)
-                self.clickhouse_client.push_data_to_database(self.table_name, chunk)
-
-            print(f"Inserted backup data for {ticker}")
-            
+        for data in ReadLocalData.read_local_data_in_chunks('local_data'):
+            for ticker, df in data.items():
+                processed_data = PreprocessData.preprocess_data(df, ticker)
+                print(f'Processing {ticker}, shape : {df.shape}')
+                self.single_ingestor.ingest_in_chunks(processed_data, ticker)
+                print(f'Data Inserted for {ticker}')
