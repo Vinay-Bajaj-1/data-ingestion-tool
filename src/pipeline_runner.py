@@ -38,9 +38,9 @@ class PipelineRunner:
         self.api_client = AngelOneApiClient(
             api_key=self.config.ANGELONE_API,
             username=self.config.ANGEL_ONE_USER_ID,
-            mpin=self.config.ANGEL_ONE_PIN,
-            access_token=self.config.ANGEL_ONE_TOKEN,
-            url=self.config.ANGEL_ONE_API_SCRIP_LINK
+            pin=self.config.ANGEL_ONE_PIN,
+            token=self.config.ANGEL_ONE_TOKEN,
+            scrip_url=self.config.ANGEL_ONE_API_SCRIP_LINK
         )
 
     def run(self):
