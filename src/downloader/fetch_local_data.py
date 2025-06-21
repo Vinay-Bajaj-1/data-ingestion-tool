@@ -4,44 +4,52 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+
 class ReadLocalData:
     @staticmethod
-
-    def read_local_data(directory_name):
+    def read_local_data_in_chunks(directory_name, chunk_size=5):
         """
-        Ensures a specified directory exists outside the project folder and reads all CSV files from it.
-        Returns a dictionary where keys are filenames (without extension) and values are pandas DataFrames.
+        Ensures a specified directory exists and yields DataFrames from CSV files in chunks.
+        This is a generator function to avoid loading all files into memory at once.
 
         Args:
-            directory_name (str): The name of the directory (expected one level above the current directory).
+            directory_name (str): The name of the directory (relative to current working directory).
+            chunk_size (int): The number of CSV files to process in each chunk.
 
-        Returns:
-            dict: Dictionary of filename -> DataFrame. Returns an empty dictionary if no CSVs are present.
+        Yields:
+            tuple: (dict: {filename_without_ext: pandas.DataFrame}) for each chunk.
         """
-        # Get absolute path one level above current directory
-        base_path = os.getcwd() 
+        base_path = os.getcwd()
         directory_path = os.path.join(base_path, directory_name)
 
-        # Create the directory if it doesn't exist
         if not os.path.exists(directory_path):
             try:
                 os.makedirs(directory_path)
                 logger.info(f"Directory created at: {directory_path}")
             except Exception as e:
                 logger.error(f"Failed to create directory: {directory_path}, Error: {e}")
-                return {}
+                return # Exit generator
 
-        # Read CSV files in the directory
-        data = {}
-        print(f'Reading all files from {directory_path}')
-        for filename in os.listdir(directory_path):
-            if filename.endswith(".csv"):
+        csv_files = [f for f in os.listdir(directory_path) if f.endswith(".csv")]
+        logger.info(f'Found {len(csv_files)} CSV files in {directory_path}')
+
+        for i in range(0, len(csv_files), chunk_size):
+            current_chunk_files = csv_files[i:i + chunk_size]
+            chunk_data = {}
+            logger.info(f"Processing chunk {int(i/chunk_size) + 1} with {len(current_chunk_files)} files.")
+            
+            for filename in current_chunk_files:
                 file_path = os.path.join(directory_path, filename)
                 try:
                     df = pd.read_csv(file_path)
                     key = os.path.splitext(filename)[0]
-                    data[key] = df
+                    chunk_data[key] = df
+                    logger.info(f"Loaded '{key}' ({df.shape[0]} rows, {df.shape[1]} columns) into current chunk.")
                 except Exception as e:
                     logger.error(f"Error reading {filename}: {e}")
-
-        return data
+            
+            if chunk_data: # Yield only if there's data in the chunk
+                yield chunk_data
+            else:
+                logger.warning(f"Chunk {int(i/chunk_size) + 1} yielded no data (e.g., due to read errors).")

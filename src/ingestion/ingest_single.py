@@ -2,20 +2,18 @@ import pandas as pd
 from datetime import datetime, timedelta
 import time
 from src.utils.logger import AppLogger
-import logging
 
 
-logger = logging.getLogger(__name__)
+logger = AppLogger.get_logger(__name__)
 
 
 class SingleTickerIngestor:
-    def __init__(self, angelone_client, clickhouse_client, preprocess_class, table_name):
-        self.angelone_client = angelone_client
+    def __init__(self, clickhouse_client, preprocess_class, table_name):
         self.clickhouse_client = clickhouse_client
         self.preprocess_class = preprocess_class
         self.table_name = table_name
 
-    def ingest(self, ticker_token: str, ticker: str):
+    def ingest(self, angelone_client, ticker_token, ticker):
         
         print(f"Ingesting data for {ticker}")
 
@@ -47,7 +45,7 @@ class SingleTickerIngestor:
             # Introduce a small delay to respect API rate limits
             time.sleep(0.5)
            
-            raw_data = self.angelone_client.get_historical_data(from_date, to_date, ticker_token)
+            raw_data = angelone_client.get_historical_data(from_date, to_date, ticker_token)
 
             # Check if raw data was returned and contains actual data points
             if raw_data and raw_data.get('data') is not None and len(raw_data['data']) > 0:
@@ -72,9 +70,28 @@ class SingleTickerIngestor:
         if all_dataframes:
             combined_df = pd.concat(all_dataframes)
             combined_df = combined_df.sort_values(by='timestamp')
-            self.clickhouse_client.push_data_to_database(self.table_name, combined_df)
+            self.clickhouse_client.push_data_to_database(self.table_name, combined_df, ticker)
             logger.info(f'Data fetched cleaned and pushed for {ticker} in database')
             
         else:
             print(f"No data to insert for {ticker}.")
             logger.error(f"No data to insert for {ticker}.")
+
+
+    def ingest_in_chunks(self, dataframe, ticker):
+        #make partitions in months
+        dataframe['ch_partition_key'] = dataframe['timestamp'].dt.to_period('M')
+        for partition_name, chunk_df in dataframe.groupby('ch_partition_key'):
+
+            partition_str = str(partition_name) 
+
+            logger.info(f"  - Pushing {len(chunk_df)} rows for partition '{partition_str}' of ticker '{ticker}'.")
+
+            df_to_push = chunk_df.drop(columns=['ch_partition_key'])
+            try:
+                self.clickhouse_client.push_data_to_database(self.table_name, df_to_push, ticker)
+                logger.debug(f"  - Successfully pushed {len(df_to_push)} rows for partition '{partition_str}'.")
+            except Exception as e:
+                logger.error(f"  - Failed to push data for partition '{partition_str}' for ticker '{ticker}': {e}", exc_info=True)
+        
+        logger.info(f"Finished pushing all monthly chunks for {ticker}.")

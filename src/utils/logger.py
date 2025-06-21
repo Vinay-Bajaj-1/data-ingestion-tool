@@ -10,7 +10,7 @@ class AppLogger:
     """
 
     @staticmethod
-    def get_logger(name, log_dir = 'logs', level=logging.ERROR):
+    def get_logger(name, log_dir = 'logs', level=logging.INFO):
         """
         Retrieves or creates a named logger instance, configuring it to write
         to a specific log file in the 'logs' directory.
@@ -55,10 +55,10 @@ class AppLogger:
             logger.addHandler(file_handler)
 
             # Console handler (optional, but good for real-time feedback)
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(level)
-            console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s:%(lineno)d - %(message)s')
-            console_handler.setFormatter(console_formatter)
-            logger.addHandler(console_handler)
+            #console_handler = logging.StreamHandler()
+            #console_handler.setLevel(level)
+            #console_formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(name)s:%(lineno)d - %(message)s')
+            #console_handler.setFormatter(console_formatter)
+            #logger.addHandler(console_handler)
 
         return logger

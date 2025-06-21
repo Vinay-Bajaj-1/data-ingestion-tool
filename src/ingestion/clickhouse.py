@@ -139,7 +139,7 @@ class ClickhouseConnect:
             return False
 
 
-    def push_data_to_database(self, table_name,dataframe):
+    def push_data_to_database(self, table_name, dataframe, ticker):
         """
         Pushes the provided DataFrame to the 'stock_ohlcv' table in ClickHouse.
 
@@ -150,6 +150,7 @@ class ClickhouseConnect:
         try:
             if self.validate_table(table_name, dataframe):
                 self.client.insert_df('stock_ohlcv', dataframe)
+                #print(f'Data Inserted to {table_name} for {ticker}')
                 logger.info("Data successfully inserted into ClickHouse.")
             else:
                 logger.error("Data not inserted into ClickHouse. Kindly check dataframe columns and table columns")
