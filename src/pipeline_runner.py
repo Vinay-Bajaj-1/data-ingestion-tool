@@ -58,7 +58,7 @@ class PipelineRunner:
         for _, row in scrip_df.iterrows():
             ticker_token = row['token']
             ticker = row['symbol'].replace("-EQ", "")
-            self.single_ingestor.ingest(self.api_client, ticker_token, ticker)
+            self.single_ingestor.fetch_and_store_single_ticker(self.api_client, ticker_token, ticker)
 
     def _run_local_mode(self):
         # Ingest data from local CSV files
@@ -66,5 +66,5 @@ class PipelineRunner:
             for ticker, df in data.items():
                 processed_data = PreprocessData.preprocess_data(df, ticker)
                 print(f'Processing {ticker}, shape : {df.shape}')
-                self.single_ingestor.ingest_in_chunks(processed_data, ticker)
+                self.single_ingestor.insert_data_monthly_chunks(processed_data, ticker)
                 print(f'Data Inserted for {ticker}')
