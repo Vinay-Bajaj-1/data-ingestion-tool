@@ -86,7 +86,7 @@ CLICKHOUSE_TABLE=stock_ohlcv
 
 ```sql
 CREATE TABLE stock_ohlcv (
-  ticker String,
+  ticker LowCardinality(String),
   timestamp DateTime,
   open Float32,
   high Float32,
