@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS {table_name}
 (
-    ticker String,
+    ticker LowCardinality(String),
     timestamp DateTime('UTC'),
     open Float64,
     high Float64,
