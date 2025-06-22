@@ -12,7 +12,6 @@ class SingleTickerIngestor:
         self.preprocess_class = preprocess_class
         self.table_name = table_name
 
-<<<<<<< HEAD
     def fetch_and_store_single_ticker(self, angelone_client, ticker_token, ticker):
         """
         Fetches historical data for a single ticker and stores it in the database.
@@ -20,14 +19,6 @@ class SingleTickerIngestor:
         print(f"Ingesting data for {ticker}")
 
         last_date = self.clickhouse_client.get_last_date_data(ticker)
-=======
-    def ingest(self, angelone_client, ticker_token, ticker):
-
-        # Get the latest timestamp of existing data from the ClickHouse database
-        last_date = self.clickhouse_client.get_last_date_data(ticker.lower())
-
-        # If no data exists or the last date is extremely old, start fetching from a predefined past date
->>>>>>> 954ffde81b8dbf81788280fcccff7a38260d3f7d
         if last_date is None or last_date.year < 1980:
             last_date = datetime(2016, 1, 1)
 
@@ -36,13 +27,6 @@ class SingleTickerIngestor:
         to_date = datetime.today().date()
 
         while empty_chunk_count < 3:
-<<<<<<< HEAD
-=======
-            #print(all_dataframes)
-            # Determine the 'from_date' for the current chunk:
-            # It's either one day after the last known data point, or 29 days before 'to_date',
-            # whichever is later, to fetch data in approximately 30-day chunks.
->>>>>>> 954ffde81b8dbf81788280fcccff7a38260d3f7d
             from_date = max(last_date.date() + timedelta(days=1), to_date - timedelta(days=29))
 
             if from_date > to_date:
