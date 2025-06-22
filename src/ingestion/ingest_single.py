@@ -37,7 +37,7 @@ class SingleTickerIngestor:
             from_date = max(last_date.date() + timedelta(days=1), to_date - timedelta(days=29))
 
             if from_date > to_date:
-                print(f"Complete data fetched for {ticker} till {to_date}.")
+                print(f"Complete data fetched for {ticker}.")
                 break
 
             print(f"Fetching from {from_date} to {to_date} for {ticker}")
