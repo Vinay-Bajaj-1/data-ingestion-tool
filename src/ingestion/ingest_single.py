@@ -56,7 +56,7 @@ class SingleTickerIngestor:
         if all_dataframes:
             combined_df = pd.concat(all_dataframes)
             combined_df = combined_df.sort_values(by='timestamp')
-            self.clickhouse_client.push_data_to_database(self.table_name, combined_df, ticker)
+            self.insert_data_monthly_chunks(combined_df, ticker)
             print(f'Data fetched cleaned and pushed for {ticker} in database')
             logger.info(f'Data fetched cleaned and pushed for {ticker} in database')
         else:
