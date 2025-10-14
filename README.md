@@ -78,9 +78,12 @@ CLICKHOUSE_PASSWORD=your_password
 CLICKHOUSE_PORT=8123
 CLICKHOUSE_DATABASE=stock_data
 CLICKHOUSE_TABLE=stock_ohlcv
+
+# ---- ZeroMQ ----
+LISTENER_IP=127.0.0.1
+LISTENER_PORT=5555
 ```
 
-> 🛑 Never commit your `.env` file. Ensure it’s listed in `.gitignore`.
 
 ## 🧪 ClickHouse Table Schema
 
@@ -108,10 +111,12 @@ src/
 │   └── preprocess.py
 ├── ingestion/
 │   ├── clickhouse.py
-│   └── ingest_single.py
+│   ├── ingest_single.py
+│   └── listener.py     
 ├── utils/
 │   └── logger.py
 main.py
+
 ```
 
 ## ✅ Requirements

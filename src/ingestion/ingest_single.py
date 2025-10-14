@@ -1,16 +1,28 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import time
+import zmq
+import os
+import zlib
+import pickle
+
 from src.utils.logger import AppLogger
+
 
 logger = AppLogger.get_logger()
 
 
 class SingleTickerIngestor:
-    def __init__(self, clickhouse_client, preprocess_class, table_name):
+    def __init__(self, clickhouse_client, preprocess_class, table_name, listener_ip, lister_port):
         self.clickhouse_client = clickhouse_client
         self.preprocess_class = preprocess_class
         self.table_name = table_name
+        self.listener_ip = listener_ip
+        self.listener_port = lister_port
+        self.zmq_context = zmq.Context()
+        self.zmq_socket = self.zmq_context.socket(zmq.PUSH)
+        self.zmq_socket.connect(f"tcp://{self.listener_ip}:{self.listener_port}")
+
 
     def fetch_and_store_single_ticker(self, angelone_client, ticker_token, ticker):
         """
@@ -65,18 +77,30 @@ class SingleTickerIngestor:
 
     def insert_data_monthly_chunks(self, dataframe, ticker):
         """
-        Inserts data into the database in monthly chunks.
+        sendsdata via ZeroMQ connection.
         """
         dataframe['ch_partition_key'] = dataframe['timestamp'].dt.to_period('M')
+
         for partition_name, chunk_df in dataframe.groupby('ch_partition_key'):
-            partition_str = str(partition_name) 
-            logger.info(f"  - Pushing {len(chunk_df)} rows for partition '{partition_str}' of ticker '{ticker}'.")
+            partition_str = str(partition_name)
+            logger.info(f"  - Preparing {len(chunk_df)} rows for partition '{partition_str}' of ticker '{ticker}'.")
 
             df_to_push = chunk_df.drop(columns=['ch_partition_key'])
+
             try:
-                self.clickhouse_client.push_data_to_database(self.table_name, df_to_push, ticker)
-                logger.debug(f"  - Successfully pushed {len(df_to_push)} rows for partition '{partition_str}'.")
+                # Pack all data into a dict
+                message = {
+                    "df": df_to_push,
+                    "ticker": ticker,
+                    "table_name": self.table_name
+                }
+
+                # Serialize & send
+                compressed = zlib.compress(pickle.dumps(message, protocol=pickle.HIGHEST_PROTOCOL))
+                self.zmq_socket.send(compressed)
+                logger.debug(f"Sent {len(df_to_push)} rows for ticker '{ticker}' and table '{self.table_name}'")
+            
             except Exception as e:
-                logger.error(f"  - Failed to push data for partition '{partition_str}' for ticker '{ticker}': {e}", exc_info=True)
-        
-        logger.info(f"Finished pushing all monthly chunks for {ticker}.")
+                logger.error(f"  - Failed for partition '{partition_str}' of ticker '{ticker}': {e}", exc_info=True)
+
+        logger.info(f"Finished pushing/sending all monthly chunks for {ticker}.")
