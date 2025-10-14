@@ -22,7 +22,7 @@ class PipelineRunner:
 
         # Create ingestor for single ticker ingestion
         self.single_ingestor = SingleTickerIngestor(
-            self.clickhouse_client, PreprocessData, self.config.CLICKHOUSE_TABLE
+            self.clickhouse_client, PreprocessData, self.config.CLICKHOUSE_TABLE, self.config.LISTENER_IP, self.config.LISTENER_PORT
         )
 
         # Determine data source mode

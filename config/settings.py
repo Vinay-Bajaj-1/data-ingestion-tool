@@ -26,3 +26,8 @@ class Config:
 
         # Local Data Path
         self.LOCAL_DATA_FOLDER = os.getenv("LOCAL_DATA_FOLDER")
+
+        #ZeroMQ
+        self.LISTENER_IP = os.getenv('LISTENER_IP')
+        self.LISTENER_PORT = os.getenv('LISTENER_PORT')
+
